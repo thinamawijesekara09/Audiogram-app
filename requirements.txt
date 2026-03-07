@@ -3,5 +3,5 @@ scikit-learn
 joblib
 opencv-python-headless
 pillow
-tensorflow
+tensorflow==2.15.0
 streamlit
