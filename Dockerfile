@@ -19,9 +19,8 @@ COPY .streamlit/ .streamlit/
 EXPOSE 8501
 
 # Set environment variables
-ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_HEADLESS=true
 
 # Run Streamlit
-CMD ["streamlit", "run", "app.py", "--logger.level=error"]
+CMD ["sh", "-c", "streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --logger.level=error --client.showErrorDetails=false"]

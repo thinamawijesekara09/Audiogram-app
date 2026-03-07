@@ -1,1 +1,1 @@
-web: streamlit run app.py --logger.level=error --client.showErrorDetails=false
+web: sh -c 'streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --logger.level=error --client.showErrorDetails=false'
