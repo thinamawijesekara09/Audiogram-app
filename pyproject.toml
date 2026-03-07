@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audiogram-app"
+version = "1.0.0"
+description = "Audiogram Severity Classifier"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "numpy<2",
+    "scikit-learn",
+    "joblib",
+    "opencv-python-headless",
+    "pillow",
+    "tensorflow==2.15.0",
+    "streamlit"
+]
