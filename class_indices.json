@@ -1,0 +1,8 @@
+{
+  "Mild": 0,
+  "Moderate": 1,
+  "Moderately severe": 2,
+  "Normal": 3,
+  "Profound": 4,
+  "Severe": 5
+}

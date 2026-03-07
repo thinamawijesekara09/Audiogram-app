@@ -1,0 +1,14 @@
+{
+  "labels": [
+    "Mild",
+    "Moderate",
+    "Moderately severe",
+    "Normal",
+    "Profound",
+    "Severe"
+  ],
+  "pca_dim": 64,
+  "hybrid_dim": 79,
+  "n_train": 634,
+  "n_test": 199
+}

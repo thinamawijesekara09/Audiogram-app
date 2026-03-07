@@ -1,0 +1,44 @@
+{
+  "freqs": [
+    500,
+    1000,
+    2000,
+    3000,
+    4000,
+    6000,
+    8000
+  ],
+  "db_min": -10,
+  "db_max": 110,
+  "train_dir": "C://Users//user//OneDrive//Desktop//speechbanana//dataset_split.1\\train",
+  "test_dir": "C://Users//user//OneDrive//Desktop//speechbanana//dataset_split.1\\test",
+  "num_train_samples": 576,
+  "num_test_samples": 190,
+  "labels": [
+    "Mild",
+    "Moderate",
+    "Moderately severe",
+    "Normal",
+    "Profound",
+    "Severe"
+  ],
+  "feature_cols": [
+    "thr_500",
+    "thr_1k",
+    "thr_2k",
+    "thr_3k",
+    "thr_4k",
+    "thr_6k",
+    "thr_8k",
+    "avg_thr",
+    "max_thr",
+    "min_thr",
+    "speech_avg",
+    "low_avg",
+    "high_avg",
+    "slope",
+    "variance"
+  ],
+  "rf_accuracy": 0.8052631578947368,
+  "svm_accuracy": 0.8
+}
