@@ -202,7 +202,7 @@ def load_cnn_classifier():
     if not MODEL_PATH.exists():
         st.error(f"CNN Model not found at {MODEL_PATH}")
         st.stop()
-    model = load_model(MODEL_PATH)
+    model = load_model(MODEL_PATH, compile=False)
     return model
 
 
@@ -211,7 +211,7 @@ def load_inceptionresnetv2_classifier():
     if not INCEPTIONRESNETV2_MODEL_PATH.exists():
         st.error(f"InceptionResNetV2 Model not found at {INCEPTIONRESNETV2_MODEL_PATH}")
         st.stop()
-    model = load_model(INCEPTIONRESNETV2_MODEL_PATH)
+    model = load_model(INCEPTIONRESNETV2_MODEL_PATH, compile=False)
     return model
 
 
