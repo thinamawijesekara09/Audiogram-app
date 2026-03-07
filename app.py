@@ -27,23 +27,19 @@ def _artifact_path(relative_path: str) -> Path:
 
 def _ensure_model_file_exists(model_path: Path, github_url: str) -> Path:
     """Download model from GitHub if it doesn't exist or is an LFS pointer."""
-    if model_path.exists():
-        # Check if it's an LFS pointer file
-        if model_path.stat().st_size < 200:
-            try:
-                content = model_path.read_bytes()
-                if b"version https://git-lfs" in content:
-                    st.info(f"Downloading {model_path.name} from GitHub... This may take a moment.")
-                    urllib.request.urlretrieve(github_url, str(model_path))
-            except Exception:
-                pass
+    if model_path.exists() and model_path.stat().st_size > 1000:
+        # File exists and is not an LFS pointer (>1KB means real file)
         return model_path
     
-    # Download if doesn't exist
-    st.info(f"Downloading {model_path.name} from GitHub... This may take a moment.")
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    urllib.request.urlretrieve(github_url, str(model_path))
-    return model_path
+    # Download the file
+    try:
+        st.info(f"Downloading {model_path.name}... This may take 30-60 seconds.")
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(github_url, str(model_path))
+        return model_path
+    except Exception as e:
+        st.error(f"Failed to download {model_path.name}: {str(e)[:100]}")
+        return None
 
 MODEL_PATH = _artifact_path("audiogram_severity_model1.2.keras")
 INCEPTIONRESNETV2_MODEL_PATH = _artifact_path("audiogram_severity_inceptionresnetv2.keras")
@@ -231,23 +227,31 @@ st.title("🎧 Audiogram Severity Classifier")
 # Model Loaders (Cached)
 # ===========================
 
-@st.cache_resource(show_spinner=True)
 def load_cnn_classifier():
+    """Lazy load CNN model only when actually needed."""
     try:
-        model_path = _ensure_model_file_exists(MODEL_PATH, CNN_MODEL_URL)
-        return load_model(model_path, compile=False, safe_mode=False)
+        with st.spinner("Loading CNN model..."):
+            model_path = _ensure_model_file_exists(MODEL_PATH, CNN_MODEL_URL)
+            if model_path is None or not model_path.exists():
+                st.error("CNN model unavailable")
+                return None
+            return load_model(model_path, compile=False, safe_mode=False)
     except Exception as e:
-        st.warning(f"CNN model could not be loaded: {e}")
+        st.error(f"CNN model error: {str(e)[:100]}")
         return None
 
 
-@st.cache_resource(show_spinner=True)
 def load_inceptionresnetv2_classifier():
+    """Lazy load InceptionResNetV2 model only when actually needed."""
     try:
-        model_path = _ensure_model_file_exists(INCEPTIONRESNETV2_MODEL_PATH, INCEPTION_MODEL_URL)
-        return load_model(model_path, compile=False, safe_mode=False)
+        with st.spinner("Loading InceptionResNetV2 model..."):
+            model_path = _ensure_model_file_exists(INCEPTIONRESNETV2_MODEL_PATH, INCEPTION_MODEL_URL)
+            if model_path is None or not model_path.exists():
+                st.error("InceptionResNetV2 model unavailable")
+                return None
+            return load_model(model_path, compile=False, safe_mode=False)
     except Exception as e:
-        st.warning(f"InceptionResNetV2 model could not be loaded: {e}")
+        st.error(f"InceptionResNetV2 model error: {str(e)[:100]}")
         return None
 
 
@@ -530,31 +534,29 @@ def speech_banana_difficulties(severity_label):
 
 
 # ===========================
-# Load Models
+# Initialize Models
 # ===========================
-cnn_model = load_cnn_classifier()
-inceptionresnetv2_model = load_inceptionresnetv2_classifier()
+# Load only small models on startup (class map, RF/SVM)
+# DeepLearning models are lazy-loaded when selected by user
 idx_to_class = load_class_map()
 rf_model, rf_feature_cols, svm_model, svm_feature_cols, label_encoder = load_ml_models()
 ml_metadata = load_ml_metadata()
+
+# Placeholders for DL models (loaded on demand)
+cnn_model_cache = {}
+inception_model_cache = {}
 
 # ===========================
 # Model Selection UI
 # ===========================
 st.sidebar.markdown("###  Model Selection")
-model_options = []
-if cnn_model is not None:
-    model_options.append("CNN (Deep Learning)")
-if inceptionresnetv2_model is not None:
-    model_options.append("InceptionResNetV2")
-if rf_model is not None:
-    model_options.append("Random Forest")
-if svm_model is not None:
-    model_options.append("SVM")
-
-if not model_options:
-    st.error("No models are available. Check model artifacts in deployment.")
-    st.stop()
+# All models available (DL models will load on demand)
+model_options = [
+    "CNN (Deep Learning)",
+    "InceptionResNetV2",
+    "Random Forest",
+    "SVM"
+]
 
 model_choice = st.sidebar.radio(
     "Choose a model:",
@@ -570,14 +572,16 @@ if uploaded:
 
     with st.spinner("Running inference..."):
         if model_choice == "CNN (Deep Learning)":
+            cnn_model = load_cnn_classifier()  # Load on demand
             if cnn_model is None:
-                st.error("CNN model is unavailable in this deployment.")
+                st.error("CNN model is unavailable.")
                 st.stop()
             label, conf, probs = predict_cnn(cnn_model, idx_to_class, image)
             model_info = "CNN (InceptionV3 Transfer Learning)"
         elif model_choice == "InceptionResNetV2":
+            inceptionresnetv2_model = load_inceptionresnetv2_classifier()  # Load on demand
             if inceptionresnetv2_model is None:
-                st.error("InceptionResNetV2 model is unavailable in this deployment.")
+                st.error("InceptionResNetV2 model is unavailable.")
                 st.stop()
             label, conf, probs = predict_inceptionresnetv2(inceptionresnetv2_model, idx_to_class, image)
             model_info = "InceptionResNetV2 (Transfer Learning)"
@@ -592,7 +596,7 @@ if uploaded:
                 model_info = "Random Forest"
         else:  # SVM
             if svm_model is None:
-                st.error("SVM model not found! (only RF available)")
+                st.error("SVM model not found!")
                 st.stop()
             label, conf, probs = predict_ml(svm_model, svm_feature_cols, label_encoder, image, "SVM")
             if ml_metadata and 'svm_accuracy' in ml_metadata:
