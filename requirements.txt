@@ -1,5 +1,6 @@
 numpy<2
 scikit-learn
+joblib
 opencv-python-headless
 pillow
 tensorflow
