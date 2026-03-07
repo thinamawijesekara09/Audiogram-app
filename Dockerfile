@@ -22,34 +22,26 @@ RUN mkdir -p /opt/models
 COPY class_indices.json /opt/models/
 COPY ml_threshold_model/ /opt/models/ml_threshold_model/
 
-# Install git and git-lfs, then pull real model files
-RUN apt-get update && apt-get install -y git git-lfs && rm -rf /var/lib/apt/lists/*
+# Install git, git-lfs, wget, and curl for downloading models
+RUN apt-get update && apt-get install -y git git-lfs wget curl && rm -rf /var/lib/apt/lists/*
 
-# Copy .gitattributes and initialize git-lfs
-COPY .gitattributes .
-RUN git init . && git lfs install --local
-
-# Copy the LFS pointer files and pull real files
+# Copy the LFS pointer files (will be replaced with real files below)
 COPY audiogram_severity_model1.2.keras .
 COPY audiogram_severity_inceptionresnetv2.keras .
 
-# Pull real files from LFS
-RUN echo "Pulling real keras models from git-lfs..." && \
-    git lfs pull -I "*.keras" || echo "LFS pull partial - downloading from GitHub instead..." && \
-    if [ ! -s audiogram_severity_model1.2.keras ] || grep -q "version https://git-lfs" audiogram_severity_model1.2.keras; then \
-      wget -O audiogram_severity_model1.2.keras "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main/audiogram_severity_model1.2.keras"; \
-    fi && \
-    if [ ! -s audiogram_severity_inceptionresnetv2.keras ] || grep -q "version https://git-lfs" audiogram_severity_inceptionresnetv2.keras; then \
-      wget -O audiogram_severity_inceptionresnetv2.keras "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main/audiogram_severity_inceptionresnetv2.keras"; \
-    fi && \
-    echo "Copying models to /opt/models..." && \
+# Download real keras models from GitHub LFS CDN
+RUN echo "Downloading keras models from GitHub LFS CDN..." && \
+    wget -q -O audiogram_severity_model1.2.keras "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main/audiogram_severity_model1.2.keras" && \
+    wget -q -O audiogram_severity_inceptionresnetv2.keras "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main/audiogram_severity_inceptionresnetv2.keras" && \
+    echo "Download complete. Copying models to /opt/models..." && \
     cp audiogram_severity_model1.2.keras /opt/models/ && \
     cp audiogram_severity_inceptionresnetv2.keras /opt/models/ && \
-    echo "Verifying keras models..." && \
+    echo "Verifying keras model files..." && \
     ls -lh /app/audiogram_severity_model1.2.keras && \
     ls -lh /app/audiogram_severity_inceptionresnetv2.keras && \
     ls -lh /opt/models/audiogram_severity_model1.2.keras && \
-    ls -lh /opt/models/audiogram_severity_inceptionresnetv2.keras
+    ls -lh /opt/models/audiogram_severity_inceptionresnetv2.keras && \
+    echo "Model verification complete!"
 
 # Expose port for Streamlit
 EXPOSE 8501
