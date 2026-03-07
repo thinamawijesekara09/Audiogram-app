@@ -1,7 +1,7 @@
-streamlit==1.44.1
+streamlit
 numpy==1.26.4
 joblib==1.4.2
-opencv-python-headless==4.10.0.84
-scikit-learn==1.5.2
-pillow==10.4.0
-tensorflow==2.16.1
+opencv-python-headless==4.9.0.80
+scikit-learn==1.4.2
+pillow==10.2.0
+tensorflow==2.15.0
