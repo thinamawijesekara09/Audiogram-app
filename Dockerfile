@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Force cache bust for Railway - build version 3
+LABEL rebuild="3"
+
 WORKDIR /app
 
 # Install dependencies
@@ -20,6 +23,7 @@ COPY class_indices.json /opt/models/
 COPY ml_threshold_model/ /opt/models/ml_threshold_model/
 
 # Download keras models directly from GitHub LFS (bypass pointer files)
+# Build timestamp: 2026-03-08T03:35:00Z (forces cache invalidation)
 RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 RUN echo "Downloading keras models from GitHub LFS..." && \
