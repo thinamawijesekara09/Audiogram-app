@@ -7,6 +7,7 @@ from typing import Tuple
 import joblib
 import cv2
 from sklearn.cluster import KMeans
+import urllib.request
 
 import streamlit as st
 from PIL import Image
@@ -24,6 +25,26 @@ def _artifact_path(relative_path: str) -> Path:
     fallback = BASE_DIR / relative_path
     return preferred if preferred.exists() else fallback
 
+def _ensure_model_file_exists(model_path: Path, github_url: str) -> Path:
+    """Download model from GitHub if it doesn't exist or is an LFS pointer."""
+    if model_path.exists():
+        # Check if it's an LFS pointer file
+        if model_path.stat().st_size < 200:
+            try:
+                content = model_path.read_bytes()
+                if b"version https://git-lfs" in content:
+                    st.info(f"Downloading {model_path.name} from GitHub... This may take a moment.")
+                    urllib.request.urlretrieve(github_url, str(model_path))
+            except Exception:
+                pass
+        return model_path
+    
+    # Download if doesn't exist
+    st.info(f"Downloading {model_path.name} from GitHub... This may take a moment.")
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(github_url, str(model_path))
+    return model_path
+
 MODEL_PATH = _artifact_path("audiogram_severity_model1.2.keras")
 INCEPTIONRESNETV2_MODEL_PATH = _artifact_path("audiogram_severity_inceptionresnetv2.keras")
 CLASS_MAP_PATH = _artifact_path("class_indices.json")
@@ -37,6 +58,11 @@ IMG_SIZE: Tuple[int, int] = (299, 299)
 FREQS = [500, 1000, 2000, 3000, 4000, 6000, 8000]
 DB_MIN = -10
 DB_MAX = 110
+
+# GitHub LFS CDN URLs for models
+GITHUB_BASE = "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main"
+CNN_MODEL_URL = f"{GITHUB_BASE}/audiogram_severity_model1.2.keras"
+INCEPTION_MODEL_URL = f"{GITHUB_BASE}/audiogram_severity_inceptionresnetv2.keras"
 
 st.set_page_config(page_title="Audiogram Severity Classifier", page_icon="🎧", layout="centered")
 
@@ -207,11 +233,9 @@ st.title("🎧 Audiogram Severity Classifier")
 
 @st.cache_resource(show_spinner=True)
 def load_cnn_classifier():
-    if not MODEL_PATH.exists():
-        st.warning(f"CNN model not found at {MODEL_PATH}.")
-        return None
     try:
-        return load_model(MODEL_PATH, compile=False, safe_mode=False)
+        model_path = _ensure_model_file_exists(MODEL_PATH, CNN_MODEL_URL)
+        return load_model(model_path, compile=False, safe_mode=False)
     except Exception as e:
         st.warning(f"CNN model could not be loaded: {e}")
         return None
@@ -219,11 +243,9 @@ def load_cnn_classifier():
 
 @st.cache_resource(show_spinner=True)
 def load_inceptionresnetv2_classifier():
-    if not INCEPTIONRESNETV2_MODEL_PATH.exists():
-        st.warning(f"InceptionResNetV2 model not found at {INCEPTIONRESNETV2_MODEL_PATH}.")
-        return None
     try:
-        return load_model(INCEPTIONRESNETV2_MODEL_PATH, compile=False, safe_mode=False)
+        model_path = _ensure_model_file_exists(INCEPTIONRESNETV2_MODEL_PATH, INCEPTION_MODEL_URL)
+        return load_model(model_path, compile=False, safe_mode=False)
     except Exception as e:
         st.warning(f"InceptionResNetV2 model could not be loaded: {e}")
         return None
