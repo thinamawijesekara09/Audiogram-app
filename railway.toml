@@ -1,0 +1,7 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "streamlit run app.py --logger.level=error --client.showErrorDetails=false"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
