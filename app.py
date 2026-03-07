@@ -1,5 +1,6 @@
 import json
 import base64
+import os
 import numpy as np
 from pathlib import Path
 from typing import Tuple
@@ -16,11 +17,18 @@ from tensorflow.keras.applications.inception_v3 import preprocess_input
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "audiogram_severity_model1.2.keras"
-INCEPTIONRESNETV2_MODEL_PATH = BASE_DIR / "audiogram_severity_inceptionresnetv2.keras"
-CLASS_MAP_PATH = BASE_DIR / "class_indices.json"
+ARTIFACT_DIR = Path(os.getenv("MODEL_DIR", str(BASE_DIR)))
+
+def _artifact_path(relative_path: str) -> Path:
+    preferred = ARTIFACT_DIR / relative_path
+    fallback = BASE_DIR / relative_path
+    return preferred if preferred.exists() else fallback
+
+MODEL_PATH = _artifact_path("audiogram_severity_model1.2.keras")
+INCEPTIONRESNETV2_MODEL_PATH = _artifact_path("audiogram_severity_inceptionresnetv2.keras")
+CLASS_MAP_PATH = _artifact_path("class_indices.json")
 BACKGROUND_IMAGE_PATH = BASE_DIR / "background.jpg"
-ML_MODEL_DIR = BASE_DIR / "ml_threshold_model"
+ML_MODEL_DIR = _artifact_path("ml_threshold_model")
 RF_MODEL_PATH = ML_MODEL_DIR / "rf_model.joblib"
 SVM_MODEL_PATH = ML_MODEL_DIR / "svm_model.joblib"
 LABEL_ENCODER_PATH = ML_MODEL_DIR / "label_encoder.joblib"

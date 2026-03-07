@@ -16,6 +16,13 @@ COPY *.json .
 COPY ml_threshold_model/ ml_threshold_model/
 COPY .streamlit/ .streamlit/
 
+# Keep model artifacts in a non-mounted path too
+RUN mkdir -p /opt/models
+COPY audiogram_severity_model1.2.keras /opt/models/
+COPY audiogram_severity_inceptionresnetv2.keras /opt/models/
+COPY class_indices.json /opt/models/
+COPY ml_threshold_model/ /opt/models/ml_threshold_model/
+
 # Fail early if model artifacts are missing in image
 RUN ls -lh /app/audiogram_severity_model1.2.keras /app/audiogram_severity_inceptionresnetv2.keras
 
@@ -25,6 +32,7 @@ EXPOSE 8501
 # Set environment variables
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_HEADLESS=true
+ENV MODEL_DIR=/opt/models
 
 # Run Streamlit
 CMD ["sh", "-c", "streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --logger.level=error --client.showErrorDetails=false"]
