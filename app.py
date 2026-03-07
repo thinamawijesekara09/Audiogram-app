@@ -200,19 +200,25 @@ st.title("🎧 Audiogram Severity Classifier")
 @st.cache_resource(show_spinner=True)
 def load_cnn_classifier():
     if not MODEL_PATH.exists():
-        st.error(f"CNN Model not found at {MODEL_PATH}")
-        st.stop()
-    model = load_model(MODEL_PATH, compile=False, safe_mode=False)
-    return model
+        st.warning(f"CNN model not found at {MODEL_PATH}.")
+        return None
+    try:
+        return load_model(MODEL_PATH, compile=False, safe_mode=False)
+    except Exception as e:
+        st.warning(f"CNN model could not be loaded: {e}")
+        return None
 
 
 @st.cache_resource(show_spinner=True)
 def load_inceptionresnetv2_classifier():
     if not INCEPTIONRESNETV2_MODEL_PATH.exists():
-        st.error(f"InceptionResNetV2 Model not found at {INCEPTIONRESNETV2_MODEL_PATH}")
-        st.stop()
-    model = load_model(INCEPTIONRESNETV2_MODEL_PATH, compile=False, safe_mode=False)
-    return model
+        st.warning(f"InceptionResNetV2 model not found at {INCEPTIONRESNETV2_MODEL_PATH}.")
+        return None
+    try:
+        return load_model(INCEPTIONRESNETV2_MODEL_PATH, compile=False, safe_mode=False)
+    except Exception as e:
+        st.warning(f"InceptionResNetV2 model could not be loaded: {e}")
+        return None
 
 
 @st.cache_data(show_spinner=True)
@@ -506,11 +512,19 @@ ml_metadata = load_ml_metadata()
 # Model Selection UI
 # ===========================
 st.sidebar.markdown("###  Model Selection")
-model_options = ["CNN (Deep Learning)", "InceptionResNetV2"]
+model_options = []
+if cnn_model is not None:
+    model_options.append("CNN (Deep Learning)")
+if inceptionresnetv2_model is not None:
+    model_options.append("InceptionResNetV2")
 if rf_model is not None:
     model_options.append("Random Forest")
 if svm_model is not None:
     model_options.append("SVM")
+
+if not model_options:
+    st.error("No models are available. Check model artifacts in deployment.")
+    st.stop()
 
 model_choice = st.sidebar.radio(
     "Choose a model:",
@@ -526,9 +540,15 @@ if uploaded:
 
     with st.spinner("Running inference..."):
         if model_choice == "CNN (Deep Learning)":
+            if cnn_model is None:
+                st.error("CNN model is unavailable in this deployment.")
+                st.stop()
             label, conf, probs = predict_cnn(cnn_model, idx_to_class, image)
             model_info = "CNN (InceptionV3 Transfer Learning)"
         elif model_choice == "InceptionResNetV2":
+            if inceptionresnetv2_model is None:
+                st.error("InceptionResNetV2 model is unavailable in this deployment.")
+                st.stop()
             label, conf, probs = predict_inceptionresnetv2(inceptionresnetv2_model, idx_to_class, image)
             model_info = "InceptionResNetV2 (Transfer Learning)"
         elif model_choice == "Random Forest":
