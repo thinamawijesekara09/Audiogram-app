@@ -12,9 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY *.keras .
 COPY *.json .
-COPY *.joblib . 2>/dev/null || true
-COPY ml_threshold_model/ ml_threshold_model/ 2>/dev/null || true
-COPY .streamlit/ .streamlit/ 2>/dev/null || true
+COPY ml_threshold_model/ ml_threshold_model/
+COPY .streamlit/ .streamlit/
 
 # Expose port for Streamlit
 EXPOSE 8501
