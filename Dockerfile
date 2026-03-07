@@ -10,10 +10,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app files
 COPY app.py .
-COPY *.keras .
+COPY audiogram_severity_model1.2.keras .
+COPY audiogram_severity_inceptionresnetv2.keras .
 COPY *.json .
 COPY ml_threshold_model/ ml_threshold_model/
 COPY .streamlit/ .streamlit/
+
+# Fail early if model artifacts are missing in image
+RUN ls -lh /app/audiogram_severity_model1.2.keras /app/audiogram_severity_inceptionresnetv2.keras
 
 # Expose port for Streamlit
 EXPOSE 8501
