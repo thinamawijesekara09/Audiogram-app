@@ -21,6 +21,7 @@ RUN mkdir -p /opt/models
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_HEADLESS=true
 ENV MODEL_DIR=/opt/models
+ENV ENABLE_DL_MODELS=false
 
 # Expose port for Streamlit
 EXPOSE 8501

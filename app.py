@@ -11,10 +11,6 @@ import urllib.request
 
 import streamlit as st
 from PIL import Image
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import img_to_array
-from tensorflow.keras.applications.inception_v3 import preprocess_input
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
@@ -62,6 +58,7 @@ DB_MAX = 110
 GITHUB_BASE = "https://media.githubusercontent.com/media/thinamawijesekara09/Audiogram-app/main"
 CNN_MODEL_URL = f"{GITHUB_BASE}/audiogram_severity_model1.2.keras"
 INCEPTION_MODEL_URL = f"{GITHUB_BASE}/audiogram_severity_inceptionresnetv2.keras"
+ENABLE_DL_MODELS = os.getenv("ENABLE_DL_MODELS", "true").lower() == "true"
 
 st.set_page_config(page_title="Audiogram Severity Classifier", page_icon="🎧", layout="centered")
 
@@ -233,6 +230,7 @@ st.title("🎧 Audiogram Severity Classifier")
 def load_cnn_classifier():
     """Lazy load CNN model only when actually needed."""
     try:
+        from tensorflow.keras.models import load_model
         with st.spinner("Loading CNN model..."):
             model_path = _ensure_model_file_exists(MODEL_PATH, CNN_MODEL_URL)
             if model_path is None or not model_path.exists():
@@ -247,6 +245,7 @@ def load_cnn_classifier():
 def load_inceptionresnetv2_classifier():
     """Lazy load InceptionResNetV2 model only when actually needed."""
     try:
+        from tensorflow.keras.models import load_model
         with st.spinner("Loading InceptionResNetV2 model..."):
             model_path = _ensure_model_file_exists(INCEPTIONRESNETV2_MODEL_PATH, INCEPTION_MODEL_URL)
             if model_path is None or not model_path.exists():
@@ -309,6 +308,8 @@ def load_ml_metadata():
 
 
 def preprocess_image(image: Image.Image) -> np.ndarray:
+    from tensorflow.keras.utils import img_to_array
+    from tensorflow.keras.applications.inception_v3 import preprocess_input
     img = image.convert("RGB").resize(IMG_SIZE)
     arr = img_to_array(img)
     arr = np.expand_dims(arr, axis=0)
@@ -317,6 +318,7 @@ def preprocess_image(image: Image.Image) -> np.ndarray:
 
 
 def preprocess_image_inceptionresnetv2(image: Image.Image) -> np.ndarray:
+    from tensorflow.keras.utils import img_to_array
     from tensorflow.keras.applications.inception_resnet_v2 import preprocess_input as preprocess_inceptionresnetv2
     img = image.convert("RGB").resize(IMG_SIZE)
     arr = img_to_array(img)
@@ -553,13 +555,11 @@ inception_model_cache = {}
 # Model Selection UI
 # ===========================
 st.sidebar.markdown("###  Model Selection")
-# All models available (DL models will load on demand)
-model_options = [
-    "CNN (Deep Learning)",
-    "InceptionResNetV2",
-    "Random Forest",
-    "SVM"
-]
+model_options = ["Random Forest", "SVM"]
+if ENABLE_DL_MODELS:
+    model_options = ["CNN (Deep Learning)", "InceptionResNetV2"] + model_options
+else:
+    st.sidebar.info("CNN models are disabled on this deployment to keep memory usage stable.")
 
 model_choice = st.sidebar.radio(
     "Choose a model:",
