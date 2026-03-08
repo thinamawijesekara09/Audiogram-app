@@ -25,6 +25,9 @@ def _artifact_path(relative_path: str) -> Path:
     fallback = BASE_DIR / relative_path
     return preferred if preferred.exists() else fallback
 
+def _model_path(relative_path: str) -> Path:
+    return ARTIFACT_DIR / relative_path
+
 def _ensure_model_file_exists(model_path: Path, github_url: str) -> Path:
     """Download model from GitHub if it doesn't exist or is an LFS pointer."""
     if model_path.exists() and model_path.stat().st_size > 1000:
@@ -41,8 +44,8 @@ def _ensure_model_file_exists(model_path: Path, github_url: str) -> Path:
         st.error(f"Failed to download {model_path.name}: {str(e)[:100]}")
         return None
 
-MODEL_PATH = _artifact_path("audiogram_severity_model1.2.keras")
-INCEPTIONRESNETV2_MODEL_PATH = _artifact_path("audiogram_severity_inceptionresnetv2.keras")
+MODEL_PATH = _model_path("audiogram_severity_model1.2.keras")
+INCEPTIONRESNETV2_MODEL_PATH = _model_path("audiogram_severity_inceptionresnetv2.keras")
 CLASS_MAP_PATH = _artifact_path("class_indices.json")
 BACKGROUND_IMAGE_PATH = BASE_DIR / "background.jpg"
 ML_MODEL_DIR = _artifact_path("ml_threshold_model")
